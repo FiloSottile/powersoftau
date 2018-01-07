@@ -11,7 +11,8 @@ import (
 
 func init() {
 	C.core_init()
-	C.ep_param_set(C.B12_381)
+	C.ep_param_set_any_pairf()
+	checkError()
 }
 
 // With CHECK on, the program exits on the second uncaught(?) error,

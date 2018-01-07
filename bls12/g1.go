@@ -4,7 +4,7 @@ package bls12
 // #include "relic_ep.h"
 // void _ep_add(ep_t r, const ep_t p, const ep_t q) { ep_add(r, p, q); }
 // void _ep_neg(ep_t r, const ep_t p) { ep_neg(r, p); }
-// int _y_is_higher(const ep_t);
+// int ep_y_is_higher(const ep_t);
 import "C"
 import (
 	"errors"
@@ -41,10 +41,6 @@ const (
 	FqElementSize      = 48
 	G1CompressedSize   = FqElementSize
 	G1UncompressedSize = 2 * FqElementSize
-
-	Fq2ElementSize     = 96
-	G2CompressedSize   = Fq2ElementSize
-	G2UncompressedSize = 2 * Fq2ElementSize
 )
 
 // https://github.com/ebfull/pairing/tree/master/src/bls12_381#serialization
@@ -87,7 +83,7 @@ func (ep *EP) EncodeCompressed() []byte {
 	C.ep_write_bin((*C.uint8_t)(&bin[0]), C.int(len(bin)), &ep.st, 1)
 	checkError()
 
-	if C._y_is_higher(&ep.st) == 1 {
+	if C.ep_y_is_higher(&ep.st) == 1 {
 		res[0] |= serializationBigY
 	}
 
@@ -160,7 +156,7 @@ func (ep *EP) DecodeCompressed(in []byte) (*EP, error) {
 	C.ep_read_bin(&ep.st, (*C.uint8_t)(&bin[0]), C.int(len(bin)))
 	checkError()
 
-	if C._y_is_higher(&ep.st) == 0 {
+	if C.ep_y_is_higher(&ep.st) == 0 {
 		if in[0]&serializationBigY != 0 {
 			C._ep_neg(&ep.st, &ep.st)
 		}

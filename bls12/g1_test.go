@@ -8,8 +8,8 @@ import (
 	"github.com/FiloSottile/powersoftau/bls12"
 )
 
-func TestVector(t *testing.T) {
-	t.Run("G1Uncompressed", func(t *testing.T) {
+func TestVectorG1(t *testing.T) {
+	t.Run("Uncompressed", func(t *testing.T) {
 		var (
 			data = readFile(t, "testdata/g1_uncompressed_valid_test_vectors.dat")
 			ep   = (&bls12.EP{}).SetZero()
@@ -35,7 +35,7 @@ func TestVector(t *testing.T) {
 			ep.Add(one)
 		}
 	})
-	t.Run("G1Compressed", func(t *testing.T) {
+	t.Run("Compressed", func(t *testing.T) {
 		var (
 			data = readFile(t, "testdata/g1_compressed_valid_test_vectors.dat")
 			ep   = (&bls12.EP{}).SetZero()

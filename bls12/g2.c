@@ -1,18 +1,15 @@
 #include "relic.h"
 #include "relic_fp.h"
-#include "relic_ep.h"
+#include "relic_epx.h"
 
-// Helpers operate on ep_t because we can't pass fp_t though cgo.
-// https://github.com/relic-toolkit/relic/issues/60
-
-int ep_y_is_higher(const ep_t ep) {
+int ep2_y_is_higher(const ep2_t ep2) {
     uint8_t a[FP_BYTES], b[FP_BYTES];
     fp_t other;
 
-    fp_write_bin(a, FP_BYTES, ep->y);
+    fp_write_bin(a, FP_BYTES, ep2->y[1]);
 
     fp_new(other);
-    fp_copy(other, ep->y);
+    fp_copy(other, ep2->y[1]);
     fp_neg(other, other);
     fp_write_bin(b, FP_BYTES, other);
     fp_free(other);
