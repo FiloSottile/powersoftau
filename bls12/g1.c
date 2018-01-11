@@ -26,3 +26,19 @@ int ep_y_is_higher(const ep_t ep) {
     }
     return 0;
 }
+
+void monty_reduce(uint8_t *bin, int len) {
+    fp_st a;
+    fp_read_bin(a, bin, len);
+
+    dv_t t;
+    dv_new(t);
+    dv_zero(t, 2 * FP_DIGS);
+
+    dv_copy(t, a, FP_DIGS);
+    fp_rdc_monty_basic(a, t);
+
+    dv_free(t);
+
+    fp_write_bin(bin, len, a);
+}

@@ -150,18 +150,13 @@ func readG2Slice(r io.Reader, n int, compressed bool) ([]*bls12.EP2, error) {
 	return res, nil
 }
 
-func (a *Accumulator) Write(filename string, compressed bool) error {
-	w, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
+func (a *Accumulator) WriteTo(w io.Writer, compressed bool) error {
 	if err := writeG1Slice(w, a.TauG1, compressed); err != nil {
 		return err
 	}
 	if err := writeG2Slice(w, a.TauG2, compressed); err != nil {
 		return err
 	}
-
 	if err := writeG1Slice(w, a.AlphaTau, compressed); err != nil {
 		return err
 	}

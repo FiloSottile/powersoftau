@@ -2,9 +2,13 @@ package bls12
 
 // #include "relic_core.h"
 // #include "relic_ep.h"
+// #include "relic_bn.h"
 // void _ep_add(ep_t r, const ep_t p, const ep_t q) { ep_add(r, p, q); }
 // void _ep_neg(ep_t r, const ep_t p) { ep_neg(r, p); }
+// void _ep_mul(ep_t r, const ep_t p, const bn_t k) { ep_mul(r, p, k); }
+// void _fp_rdc_monty(fp_t c, dv_t a) { fp_rdc_monty(c, a); };
 // int ep_y_is_higher(const ep_t);
+// void monty_reduce(uint8_t *bin, int len);
 import "C"
 import (
 	"errors"
@@ -25,6 +29,30 @@ func (ep *EP) SetOne() *EP {
 	if C.ep_is_infty(&ep.st) == 1 {
 		panic("G == 0")
 	}
+	return ep
+}
+
+func (ep *EP) Copy() *EP {
+	a := &EP{}
+	C.ep_copy(&a.st, &ep.st)
+	return a
+}
+
+func (ep *EP) ScalarMult(s []byte) *EP {
+	var bn C.bn_st
+	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
+	checkError()
+	C._ep_mul(&ep.st, &ep.st, &bn)
+	checkError()
+	return ep
+}
+
+func (ep *EP) ScalarBaseMult(s []byte) *EP {
+	var bn C.bn_st
+	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
+	checkError()
+	C.ep_mul_gen(&ep.st, &bn)
+	checkError()
 	return ep
 }
 
@@ -166,4 +194,18 @@ func (ep *EP) DecodeCompressed(in []byte) (*EP, error) {
 		}
 	}
 	return ep, nil
+}
+
+func IsScalar(s []byte) bool {
+	var bn, r C.bn_st
+	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
+	checkError()
+	C.ep_curve_get_ord(&r)
+	checkError()
+	return C.bn_cmp_abs(&bn, &r) == C.CMP_LT
+}
+
+func FqMontgomeryReduce(b []byte) {
+	C.monty_reduce((*C.uint8_t)(&b[0]), C.int(len(b)))
+	checkError()
 }

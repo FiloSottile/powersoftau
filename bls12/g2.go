@@ -6,7 +6,11 @@ package bls12
 // void _ep2_free(ep2_t t) { ep2_free(t); }
 // void _ep2_add(ep2_t r, const ep2_t p, const ep2_t q) { ep2_add(r, p, q); }
 // void _ep2_neg(ep2_t r, const ep2_t p) { ep2_neg(r, p); }
+// void _ep2_mul(ep2_t r, const ep2_t p, const bn_t k) { ep2_mul(r, p, k); }
 // int ep2_y_is_higher(const ep2_t ep2);
+// void ep2_read_x(ep2_t ep2, uint8_t* bin, int len);
+// void ep2_mul_cof_b12(ep2_t r, ep2_t p); // unexported, don't @ me
+// void ep2_scale_by_cofactor(ep2_t p);
 import "C"
 import "errors"
 
@@ -40,6 +44,15 @@ func (ep2 *EP2) SetOne() *EP2 {
 	return ep2
 }
 
+func (ep2 *EP2) ScalarMult(s []byte) *EP2 {
+	var bn C.bn_st
+	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
+	checkError()
+	C._ep2_mul(ep2.t, ep2.t, &bn)
+	checkError()
+	return ep2
+}
+
 func (ep2 *EP2) Add(a *EP2) *EP2 {
 	C._ep2_add(ep2.t, ep2.t, a.t)
 	return ep2
@@ -47,6 +60,18 @@ func (ep2 *EP2) Add(a *EP2) *EP2 {
 
 func (ep2 *EP2) Equal(a *EP2) bool {
 	return C.ep2_cmp(ep2.t, a.t) == C.CMP_EQ
+}
+
+func (ep2 *EP2) ScaleByCofactor() *EP2 {
+	// https://github.com/relic-toolkit/relic/issues/64
+	// C.ep2_mul_cof_b12(ep2.t, ep2.t) // TODO: doesn't work, file issue
+	C.ep2_scale_by_cofactor(ep2.t)
+	checkError()
+	return ep2
+}
+
+func (ep2 *EP2) IsZero() bool {
+	return C.ep2_is_infty(ep2.t) == 1
 }
 
 const (
@@ -154,17 +179,15 @@ func (ep2 *EP2) DecodeCompressed(in []byte) (*EP2, error) {
 		return nil, errors.New("point isn't compressed")
 	}
 
-	bin := make([]byte, 1, Fq2ElementSize+1)
-	bin[0] = 2
-	bin = swapLimbs(bin, in)
-	bin[Fq2ElementSize/2+1] &= serializationMask
+	bin := swapLimbs(nil, in)
+	bin[Fq2ElementSize/2] &= serializationMask
 
 	if in[0]&serializationInfinity != 0 {
 		if in[0]&serializationBigY != 0 {
 			return nil, errors.New("high Y bit improperly set")
 		}
-		for i := range bin[1:] {
-			if bin[1+i] != 0 {
+		for _, b := range bin {
+			if b != 0 {
 				return nil, errors.New("invalid infinity encoding")
 			}
 		}
@@ -172,9 +195,10 @@ func (ep2 *EP2) DecodeCompressed(in []byte) (*EP2, error) {
 		return ep2, nil
 	}
 
-	C.ep2_norm(ep2.t, ep2.t)
-	C.ep2_read_bin(ep2.t, (*C.uint8_t)(&bin[0]), C.int(len(bin)))
-	checkError()
+	C.ep2_read_x(ep2.t, (*C.uint8_t)(&bin[0]), C.int(len(bin)))
+	if C.ep2_upk(ep2.t, ep2.t) == 0 {
+		return nil, errors.New("no square root found")
+	}
 
 	if C.ep2_y_is_higher(ep2.t) == 0 {
 		if in[0]&serializationBigY != 0 {

@@ -7,6 +7,7 @@ package bls12
 import "C"
 import (
 	"os"
+	"runtime/debug"
 )
 
 func init() {
@@ -31,10 +32,11 @@ func init() {
 
 func checkError() {
 	if C.err_get_code() != C.STS_OK {
-		var e *C.err_t
-		var msg **C.char
-		C.err_get_msg(e, msg)
-		// errors.New(C.GoString(*msg))
-		os.Exit(int(*e))
+		var e C.err_t
+		var msg *C.char
+		C.err_get_msg(&e, &msg)
+		// errors.New(C.GoString(msg))
+		debug.PrintStack()
+		os.Exit(int(e))
 	}
 }
