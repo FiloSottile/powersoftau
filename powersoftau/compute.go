@@ -26,7 +26,7 @@ func (c *Challenge) Compute() {
 			c.Accumulator.TauG2[i].ScalarMult(k.Bytes())
 			ka.Mul(k, alpha).Mod(ka, r)
 			c.Accumulator.AlphaTau[i].ScalarMult(ka.Bytes())
-			kb.Mul(k, alpha).Mod(kb, r)
+			kb.Mul(k, beta).Mod(kb, r)
 			c.Accumulator.BetaTau[i].ScalarMult(kb.Bytes())
 		}
 
