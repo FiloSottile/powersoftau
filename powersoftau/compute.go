@@ -2,11 +2,12 @@ package powersoftau
 
 import (
 	"math/big"
+	"sync"
 
 	"github.com/FiloSottile/powersoftau/bls12"
 )
 
-func (c *Challenge) Compute() {
+func (c *Challenge) Compute(processes int) {
 	pub, priv := NewKeypair(c.Hash[:])
 	c.PublicKey = pub
 
@@ -17,21 +18,47 @@ func (c *Challenge) Compute() {
 	alpha.SetBytes(priv.Alpha)
 	beta.SetBytes(priv.Beta)
 
-	k, ka, kb := &big.Int{}, &big.Int{}, &big.Int{}
-	k.SetInt64(1)
+	computeRange := func(a, b int) {
+		k, ka, kb := &big.Int{}, &big.Int{}, &big.Int{}
+		k.Exp(tau, big.NewInt(int64(a)), r)
 
-	for i := 0; i < TauPowersG1; i++ {
-		c.Accumulator.TauG1[i].ScalarMult(k.Bytes())
-		if i < TauPowers {
-			c.Accumulator.TauG2[i].ScalarMult(k.Bytes())
-			ka.Mul(k, alpha).Mod(ka, r)
-			c.Accumulator.AlphaTau[i].ScalarMult(ka.Bytes())
-			kb.Mul(k, beta).Mod(kb, r)
-			c.Accumulator.BetaTau[i].ScalarMult(kb.Bytes())
+		for i := a; i < b; i++ {
+			c.Accumulator.TauG1[i].ScalarMult(k.Bytes())
+			if i < TauPowers {
+				c.Accumulator.TauG2[i].ScalarMult(k.Bytes())
+				ka.Mul(k, alpha).Mod(ka, r)
+				c.Accumulator.AlphaTau[i].ScalarMult(ka.Bytes())
+				kb.Mul(k, beta).Mod(kb, r)
+				c.Accumulator.BetaTau[i].ScalarMult(kb.Bytes())
+			}
+
+			k.Mul(k, tau).Mod(k, r)
 		}
-
-		k.Mul(k, tau).Mod(k, r)
 	}
+
+	chunk := 1 << 10
+	work := make(chan struct{ a, b int })
+
+	var wg sync.WaitGroup
+	for i := 0; i < processes; i++ {
+		wg.Add(1)
+		go func() {
+			for job := range work {
+				computeRange(job.a, job.b)
+			}
+			wg.Done()
+		}()
+	}
+
+	for i := 0; i < TauPowersG1; i += chunk {
+		a, b := i, i+chunk
+		if b > TauPowersG1 {
+			b = TauPowersG1
+		}
+		work <- struct{ a, b int }{a, b}
+	}
+	close(work)
+	wg.Wait()
 
 	c.Accumulator.BetaG2.ScalarMult(priv.Beta)
 }
