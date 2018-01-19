@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	TauPowers     = 1 << 10 // 1 << 21
+	TauPowers     = 1 << 21
 	TauPowersG1   = TauPowers<<1 - 1
 	ChallengeSize = TauPowersG1*bls12.G1UncompressedSize + // G1 powers
 		TauPowers*bls12.G2UncompressedSize + // G2 powers
