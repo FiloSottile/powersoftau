@@ -40,9 +40,7 @@ func NewKeypair(digest []byte) (*PublicKey, *PrivateKey) {
 		h.Write(digest)
 		h.Write(S.EncodeUncompressed())
 		h.Write(Sx.EncodeUncompressed())
-		var hh [32]byte
-		h.Sum(hh[:0])
-		SxG2x := HashToG2(&hh).ScalarMult(x)
+		SxG2x := HashToG2(h.Sum(nil)).ScalarMult(x)
 		return struct {
 			S     *bls12.EP
 			Sx    *bls12.EP

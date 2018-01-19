@@ -31,6 +31,7 @@ type Challenge struct {
 	PreviousHash [blake2b.Size]byte
 	Accumulator  *Accumulator
 	Hash         [blake2b.Size]byte
+	PublicKey    *PublicKey
 }
 
 func ReadChallenge(filename string) (*Challenge, error) {
@@ -53,12 +54,35 @@ func ReadChallenge(filename string) (*Challenge, error) {
 	if _, err := io.ReadFull(r, c.PreviousHash[:]); err != nil {
 		return nil, err
 	}
-	if _, err := ReadAccumulator(r, false); err != nil {
+	c.Accumulator, err = ReadAccumulator(r, false)
+	if err != nil {
 		return nil, err
 	}
 	h.Sum(c.Hash[:0])
 
 	return c, nil
+}
+
+func WriteResponse(filename string, ch *Challenge) ([]byte, error) {
+	f, err := os.Create(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	h, _ := blake2b.New512(nil)
+	w := io.MultiWriter(f, h)
+
+	if _, err := w.Write(ch.Hash[:]); err != nil {
+		return nil, err
+	}
+	if err := ch.Accumulator.WriteTo(w, true); err != nil {
+		return nil, err
+	}
+	if err := ch.PublicKey.WriteTo(w); err != nil {
+		return nil, err
+	}
+
+	return h.Sum(nil), nil
 }
 
 type Accumulator struct {
@@ -193,6 +217,25 @@ func writeG2Slice(w io.Writer, s []*bls12.EP2, compressed bool) error {
 			buf = p.EncodeUncompressed()
 		}
 		if _, err := w.Write(buf); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *PublicKey) WriteTo(w io.Writer) error {
+	for _, point := range [][]byte{
+		p.Tau.S.EncodeUncompressed(),
+		p.Tau.Sx.EncodeUncompressed(),
+		p.Alpha.S.EncodeUncompressed(),
+		p.Alpha.Sx.EncodeUncompressed(),
+		p.Beta.S.EncodeUncompressed(),
+		p.Beta.Sx.EncodeUncompressed(),
+		p.Tau.SxG2x.EncodeUncompressed(),
+		p.Alpha.SxG2x.EncodeUncompressed(),
+		p.Beta.SxG2x.EncodeUncompressed(),
+	} {
+		if _, err := w.Write(point); err != nil {
 			return err
 		}
 	}

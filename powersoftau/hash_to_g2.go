@@ -15,7 +15,7 @@ verification, uses the Rand trait as implemented by ChaChaRng.
 
 Here is a reversed spec:
 
-	1. Use a 32-byte digest as a ChaCha20 key [hash_to_g2]
+	1. Use the first 32 digest bytes as a ChaCha20 key [hash_to_g2]
 
 	2. Pick a random field element x = c0 + c1 * u [Fq2::Rand]
 		2.1. Pick a random c0 [Fq::Rand]
@@ -54,8 +54,10 @@ Here is a reversed spec:
 
 */
 
-func HashToG2(digest *[32]byte) *bls12.EP2 {
-	rng := chacha20.NewRng(digest)
+func HashToG2(digest []byte) *bls12.EP2 {
+	var key [32]byte
+	copy(key[:], digest)
+	rng := chacha20.NewRng(&key)
 
 	p := bls12.NewEP2()
 	for {
