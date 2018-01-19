@@ -15,7 +15,9 @@ verification, uses the Rand trait as implemented by ChaChaRng.
 
 Here is a reversed spec:
 
-	1. Use the first 32 digest bytes as a ChaCha20 key [hash_to_g2]
+	1. Split the first 32 bytes of the digest into 8 uint32, reverse
+	   their byte order and use the result as a ChaCha20 key [hash_to_g2]
+	   [read_u32::<BigEndian>] [ChaChaRng::from_seed]
 
 	2. Pick a random field element x = c0 + c1 * u [Fq2::Rand]
 		2.1. Pick a random c0 [Fq::Rand]
@@ -56,7 +58,10 @@ Here is a reversed spec:
 
 func HashToG2(digest []byte) *bls12.EP2 {
 	var key [32]byte
-	copy(key[:], digest)
+	for i := 0; i < 32; i += 4 {
+		k := binary.LittleEndian.Uint32(digest[i:])
+		binary.BigEndian.PutUint32(key[i:], k)
+	}
 	rng := chacha20.NewRng(&key)
 
 	p := bls12.NewEP2()
