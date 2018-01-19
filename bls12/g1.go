@@ -9,6 +9,8 @@ package bls12
 // void _fp_rdc_monty(fp_t c, dv_t a) { fp_rdc_monty(c, a); };
 // int ep_y_is_higher(const ep_t);
 // void monty_reduce(uint8_t *bin, int len);
+// bn_t _bn_new();
+// void _bn_free(bn_t t);
 import "C"
 import (
 	"errors"
@@ -39,19 +41,21 @@ func (ep *EP) Copy() *EP {
 }
 
 func (ep *EP) ScalarMult(s []byte) *EP {
-	var bn C.bn_st
-	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
+	bn := C._bn_new()
+	defer C._bn_free(bn)
+	C.bn_read_bin(bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
 	checkError()
-	C._ep_mul(&ep.st, &ep.st, &bn)
+	C._ep_mul(&ep.st, &ep.st, bn)
 	checkError()
 	return ep
 }
 
 func (ep *EP) ScalarBaseMult(s []byte) *EP {
-	var bn C.bn_st
-	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
+	bn := C._bn_new()
+	defer C._bn_free(bn)
+	C.bn_read_bin(bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
 	checkError()
-	C.ep_mul_gen(&ep.st, &bn)
+	C.ep_mul_gen(&ep.st, bn)
 	checkError()
 	return ep
 }
@@ -194,15 +198,6 @@ func (ep *EP) DecodeCompressed(in []byte) (*EP, error) {
 		}
 	}
 	return ep, nil
-}
-
-func IsScalar(s []byte) bool {
-	var bn, r C.bn_st
-	C.bn_read_bin(&bn, (*C.uint8_t)(&s[0]), C.int(len(s)))
-	checkError()
-	C.ep_curve_get_ord(&r)
-	checkError()
-	return C.bn_cmp_abs(&bn, &r) == C.CMP_LT
 }
 
 func FqMontgomeryReduce(b []byte) {
