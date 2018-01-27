@@ -8,6 +8,8 @@ It is written in Go, shares no code with the [main Rust implementation](https://
 Installation
 ------------
 
+You will need a recent version of [Go](https://golang.org) (1.9+ is known to work), [GOPATH](https://github.com/golang/go/wiki/SettingGOPATH) set and a C compiler.
+
 ```
 git clone --recursive https://github.com/FiloSottile/powersoftau $GOPATH/src/github.com/FiloSottile/powersoftau
 cd $GOPATH/src/github.com/FiloSottile/powersoftau && make
