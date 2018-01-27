@@ -14,6 +14,7 @@ import (
 func main() {
 	challengeFile := flag.String("challenge", "./challenge", "path to the challenge file")
 	responseFile := flag.String("response", "./response", "path to the response file")
+	nextFile := flag.String("next", "", "path to the next challenge file, optional")
 	pprof := flag.Bool("pprof", false, "run a profiling server; use ONLY FOR DEBUGGING")
 	flag.Parse()
 
@@ -31,16 +32,22 @@ func main() {
 	ch.Compute(runtime.NumCPU())
 
 	log.Printf("Writing response...\n")
-	hash, err := powersoftau.WriteResponse(*responseFile, ch)
-	if err != nil {
+	if err := powersoftau.WriteResponse(*responseFile, ch); err != nil {
 		log.Fatalf("Failed to write the response: %v\n", err)
+	}
+
+	if *nextFile != "" {
+		log.Printf("Writing next challenge...\n")
+		if err := powersoftau.WriteNextChallenge(*nextFile, ch); err != nil {
+			log.Fatalf("Failed to write the next challenge: %v\n", err)
+		}
 	}
 
 	log.Printf("Done!\n\nYour contribution has been written to `%s`\n\nThe BLAKE2b hash of `%s` is:\n", *responseFile, *responseFile)
 	for i := 0; i < 4; i++ {
 		fmt.Printf("\t")
 		for k := 0; k < 4; k++ {
-			fmt.Printf("%x ", hash[i*4*4+k*4:i*4*4+k*4+4])
+			fmt.Printf("%x ", ch.ResponseHash[i*4*4+k*4:i*4*4+k*4+4])
 		}
 		fmt.Printf("\n")
 	}

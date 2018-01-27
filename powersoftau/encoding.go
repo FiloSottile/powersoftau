@@ -28,10 +28,12 @@ var (
 )
 
 type Challenge struct {
-	PreviousHash [blake2b.Size]byte
-	Accumulator  *Accumulator
-	Hash         [blake2b.Size]byte
-	PublicKey    *PublicKey
+	PreviousHash  []byte
+	ChallengeHash []byte
+	ResponseHash  []byte
+
+	Accumulator *Accumulator
+	PublicKey   *PublicKey
 }
 
 func ReadChallenge(filename string) (*Challenge, error) {
@@ -51,38 +53,55 @@ func ReadChallenge(filename string) (*Challenge, error) {
 	r := io.TeeReader(f, h)
 
 	c := &Challenge{}
-	if _, err := io.ReadFull(r, c.PreviousHash[:]); err != nil {
+	if _, err := io.ReadFull(r, c.PreviousHash); err != nil {
 		return nil, err
 	}
 	c.Accumulator, err = ReadAccumulator(r, false)
 	if err != nil {
 		return nil, err
 	}
-	h.Sum(c.Hash[:0])
+	c.ChallengeHash = h.Sum(nil)
 
 	return c, nil
 }
 
-func WriteResponse(filename string, ch *Challenge) ([]byte, error) {
+func WriteResponse(filename string, ch *Challenge) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	h, _ := blake2b.New512(nil)
 	w := io.MultiWriter(f, h)
 
-	if _, err := w.Write(ch.Hash[:]); err != nil {
-		return nil, err
+	if _, err := w.Write(ch.ChallengeHash); err != nil {
+		return err
 	}
 	if err := ch.Accumulator.WriteTo(w, true); err != nil {
-		return nil, err
+		return err
 	}
 	if err := ch.PublicKey.WriteTo(w); err != nil {
-		return nil, err
+		return err
 	}
 
-	return h.Sum(nil), nil
+	ch.ResponseHash = h.Sum(nil)
+	return nil
+}
+
+func WriteNextChallenge(filename string, ch *Challenge) error {
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+
+	if _, err := f.Write(ch.ResponseHash); err != nil {
+		return err
+	}
+	if err := ch.Accumulator.WriteTo(f, false); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type Accumulator struct {

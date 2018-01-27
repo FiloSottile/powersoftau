@@ -8,7 +8,7 @@ import (
 )
 
 func (c *Challenge) Compute(processes int) {
-	pub, priv := NewKeypair(c.Hash[:])
+	pub, priv := NewKeypair(c.ChallengeHash[:])
 	c.PublicKey = pub
 
 	r := (&big.Int{}).SetBytes(bls12.ScalarOrder())
