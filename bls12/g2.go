@@ -67,7 +67,7 @@ func (ep2 *EP2) Equal(a *EP2) bool {
 
 func (ep2 *EP2) ScaleByCofactor() *EP2 {
 	// https://github.com/relic-toolkit/relic/issues/64
-	// C.ep2_mul_cof_b12(ep2.t, ep2.t) // TODO: doesn't work, file issue
+	// C.ep2_mul_cof_b12(ep2.t, ep2.t)
 	C.ep2_scale_by_cofactor(ep2.t)
 	checkError()
 	return ep2
