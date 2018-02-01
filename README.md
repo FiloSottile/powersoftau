@@ -8,19 +8,20 @@ It is written in Go, shares no code with the [main Rust implementation](https://
 Installation
 ------------
 
-You will need a recent version of [Go](https://golang.org) (1.9+ is known to work), [GOPATH](https://github.com/golang/go/wiki/SettingGOPATH) set and a C compiler.
+You will need a recent version of [Go](https://golang.org) (1.9+ is known to work) and a C compiler.
 
 ```
-git clone --recursive https://github.com/FiloSottile/powersoftau $GOPATH/src/github.com/FiloSottile/powersoftau
-cd $GOPATH/src/github.com/FiloSottile/powersoftau && make
+git clone --recursive https://github.com/FiloSottile/powersoftau $(go env GOPATH)/src/github.com/FiloSottile/powersoftau
+cd $(go env GOPATH)/src/github.com/FiloSottile/powersoftau && make
 go install github.com/FiloSottile/powersoftau/cmd/taucompute
+$(go env GOPATH)/bin/taucompute --help
 ```
 
 Usage
 -----
 
 ```
-Usage of $GOPATH/bin/taucompute:
+Usage of taucompute:
   -challenge string
     	path to the challenge file (default "./challenge")
   -next string
@@ -31,6 +32,4 @@ Usage of $GOPATH/bin/taucompute:
     	path to the response file (default "./response")
 ```
 
-To facilitate running multiple implementations of Powers of Tau, you can run `taucompute` with the `-next` flag, which will also write a new challenge file once done with the computation.
-
-NOTE: you will have to submit both response files.
+To facilitate running multiple implementations of Powers of Tau, you can run `taucompute` with the `-next` flag, which will also write a new challenge file once done with the computation. NOTE: you will have to submit both response files.
