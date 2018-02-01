@@ -52,7 +52,9 @@ func ReadChallenge(filename string) (*Challenge, error) {
 	h, _ := blake2b.New512(nil)
 	r := io.TeeReader(f, h)
 
-	c := &Challenge{}
+	c := &Challenge{
+		PreviousHash: make([]byte, blake2b.Size),
+	}
 	if _, err := io.ReadFull(r, c.PreviousHash); err != nil {
 		return nil, err
 	}
