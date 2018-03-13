@@ -1,0 +1,29 @@
+---
+name: "powersoftau-0.01"
+enable_cache: true
+distro: "debian"
+architectures:
+- "amd64"
+suites:
+- "stretch"
+packages:
+- "golang"
+- "git-core"
+- "cmake"
+remotes:
+- "url": "https://github.com/FiloSottile/powersoftau.git"
+  "dir": "powersoftau"
+files: []
+script: |
+
+  BUILDDIR=`pwd`
+  export BASEDIR=$BUILDDIR/go/src/github.com/FiloSottile/powersoftau
+  export GOPATH=$BUILDDIR/go
+  mkdir -p `dirname $BASEDIR`
+  ln -s `pwd`/powersoftau $BASEDIR
+  cd $BASEDIR
+  make
+  cd cmd/taucompute
+  go install .
+  strip $GOPATH/bin/taucompute
+  cp $GOPATH/bin/taucompute $BUILDDIR/../out

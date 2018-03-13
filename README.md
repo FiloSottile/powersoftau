@@ -13,7 +13,6 @@ You will need a recent version of [Go](https://golang.org) (1.9+ is known to wor
 ```
 git clone --recursive https://github.com/FiloSottile/powersoftau $(go env GOPATH)/src/github.com/FiloSottile/powersoftau
 cd $(go env GOPATH)/src/github.com/FiloSottile/powersoftau && make
-export CGO_LDFLAGS_ALLOW=".*\.a" # only needed for Go version 1.9.4
 go install github.com/FiloSottile/powersoftau/cmd/taucompute
 $(go env GOPATH)/bin/taucompute --help
 ```
